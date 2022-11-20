@@ -23,9 +23,29 @@ async function run(){
         const appointmentOptionCollection = client.db('doctorsAppointment').collection("appointmentOptions")
         const bookingsCollection = client.db('doctorsAppointment').collection("bookings")
         
+        // this is for overall data load 
+        // app.get("/appointmentOptions",async(req,res)=>{
+        //     const query = {}
+        //     const options =  await appointmentOptionCollection.find(query).toArray()
+        //     res.send(options)
+        // })
+
+
+        // overall data load plus find appointment date & time slot****
+        // mane perticular date e kon kon time slot booked kar kar jonno aita nilam 1st
+
         app.get("/appointmentOptions",async(req,res)=>{
+            const date = req.query.date;
+            
             const query = {}
             const options =  await appointmentOptionCollection.find(query).toArray()
+            const bookingQuery = {appointmentDate:date}
+            const alreadyBooked = await bookingsCollection.find(bookingQuery).toArray();
+            options.forEach(option => {
+                const optionBooked = alreadyBooked.filter(book => book.treatment === option.name)
+                const bookedslots = optionBooked.map(book => book.slot)
+                console.log(date,option.name,bookedslots);
+            })
             res.send(options)
         })
 
