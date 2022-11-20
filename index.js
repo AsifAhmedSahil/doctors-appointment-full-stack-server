@@ -22,6 +22,7 @@ async function run(){
     try{
         const appointmentOptionCollection = client.db('doctorsAppointment').collection("appointmentOptions")
         const bookingsCollection = client.db('doctorsAppointment').collection("bookings")
+        const usersCollection = client.db('doctorsAppointment').collection("users")
         
         // this is for overall data load 
         // app.get("/appointmentOptions",async(req,res)=>{
@@ -53,6 +54,14 @@ async function run(){
             res.send(options)
         })
 
+        app.get("/bookings",async(req,res) =>{
+            const email = req.query.email;
+            console.log(email)
+            const query = { email: email};
+            const bookings = await bookingsCollection.find(query).toArray();
+            res.send(bookings);
+        })
+
         app.post("/bookings",async(req,res)=>{
             const booking = req.body;
             const query = {
@@ -69,12 +78,17 @@ async function run(){
                 const message = `You already have a booking on ${booking.appointmentDate}`
                 return res.send({acknowledge:false , message})
             }
-
-
-
             const result = await bookingsCollection.insertOne(booking)
             res.send(result)
+        });
+
+        app.post("/users",async(req,res)=>{
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
         })
+
+
     }
     finally{
 
