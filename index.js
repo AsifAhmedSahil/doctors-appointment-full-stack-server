@@ -44,6 +44,10 @@ async function run(){
             options.forEach(option => {
                 const optionBooked = alreadyBooked.filter(book => book.treatment === option.name)
                 const bookedslots = optionBooked.map(book => book.slot)
+                // remainining slots gulo k alada krbo
+
+                const remainingSlots = option.slots.filter(slot => !bookedslots.includes(slot))
+                option.slots = remainingSlots
                 console.log(date,option.name,bookedslots);
             })
             res.send(options)
@@ -51,6 +55,23 @@ async function run(){
 
         app.post("/bookings",async(req,res)=>{
             const booking = req.body;
+            const query = {
+                appointmentDate:booking.appointmentDate,
+                treatment: booking.treatment,
+                email: booking.email
+            }
+
+
+            const alreadyBooked = await bookingsCollection
+            .find(query).toArray();
+
+            if(alreadyBooked.length){
+                const message = `You already have a booking on ${booking.appointmentDate}`
+                return res.send({acknowledge:false , message})
+            }
+
+
+
             const result = await bookingsCollection.insertOne(booking)
             res.send(result)
         })
