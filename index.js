@@ -56,6 +56,7 @@ async function run() {
       .collection("bookings");
     const usersCollection = client.db("doctorsAppointment").collection("users");
     const doctorsCollection = client.db("doctorsAppointment").collection("doctor");
+    const paymentsCollection = client.db("doctorsAppointment").collection("payments");
 
     // use verify admin after verify jwt
     const verifyAdmin = async (req,res,next)=>{
@@ -265,6 +266,24 @@ async function run() {
       res.send({
           clientSecret: paymentIntent.client_secret,
       });
+
+      // save payment systesm
+
+      app.post("/payments",async(req,res)=>{
+        const payment = req.body;
+        const result = await paymentsCollection.insertOne(payment);
+
+        const id = payment.bookingId
+        const filter = {_id:ObjectId(id)}
+        const updatedDoc = {
+          $set:{
+            paid:true,
+            transactionId: payment.transactionId
+          }
+        }
+        const updatedResult = await bookingsCollection.updateOne(filter,updatedDoc)
+        res.send(result);
+      })
   });
 
    
