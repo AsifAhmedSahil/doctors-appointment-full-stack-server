@@ -6,6 +6,9 @@ require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { query } = require("express");
 
+const stripe = require("stripe")(process.env.STRIPE_SECTET);
+
+
 const app = express();
 // middleware
 
@@ -123,9 +126,7 @@ async function run() {
     app.put("/users/admin/:id",verifyJWT,verifyAdmin,async(req,res)=>{
 
       // user admin naki check krar jonno aita krte hoi token er sathe milate hoi
-     
       const id = req.params.id;
-      
       const filter = { _id: ObjectId(id)}
       const options = { upsert: true};
       const updatedDoc= {
@@ -136,6 +137,21 @@ async function run() {
       const result = await usersCollection.updateOne(filter,updatedDoc,options);
       res.send(result)
     })
+
+    // temporary added price data ****
+    // app.get("/addprice",async(req,res)=>{
+    //   const filter = {}
+    //   const options = { upsert: true};
+    //   const updatedDoc= {
+    //     $set:{
+    //       price:99
+    //     }
+    //   }
+    //   const result = await appointmentOptionCollection.updateMany(filter,updatedDoc,options);
+    //   res.send(result)
+    // })
+
+
 
 
     app.get('/bookings', verifyJWT, async (req, res) => {
@@ -151,6 +167,14 @@ async function run() {
         const bookings = await bookingsCollection.find(query).toArray();
         console.log("bookings",bookings);
         res.send(bookings);
+    })
+
+    // get from bookings items bookingscollections 
+    app.get("/bookings/:id",async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id:ObjectId(id)}
+      const booking = await bookingsCollection.findOne(query);
+      res.send(booking);
     })
 
     // for just name speciality == use project and create a new api
@@ -224,7 +248,26 @@ async function run() {
       res.send(result);
     })
 
+    // payment system post method +++
 
+    app.post('/create-payment-intent', async (req, res) => {
+      const booking = req.body;
+      const price = booking.price;
+      const amount = price * 100;
+
+      const paymentIntent = await stripe.paymentIntents.create({
+          currency: 'usd',
+          amount: amount,
+          "payment_method_types": [
+              "card"
+          ]
+      });
+      res.send({
+          clientSecret: paymentIntent.client_secret,
+      });
+  });
+
+   
   } finally {
   }
 }
